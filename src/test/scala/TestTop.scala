@@ -132,7 +132,7 @@ class TestTop_AMU_L2_L3_RAM()(implicit p: Parameters, params: TLBundleParameters
   //     ))
   //   }
   // }
-  val amu = LazyModule(new AMU()(p, params))
+  val amu = LazyModule(new AMU()(p))
   val matrix_nodes = amu.matrix_nodes
   val c_nodes = Seq(l1d)
   val l1i_nodes = Seq(l1i)

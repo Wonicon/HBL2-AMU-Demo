@@ -33,8 +33,11 @@ class AMUIO(implicit p: Parameters) extends Bundle {
 }
 
 
-class AMUImp(outer: AMU, params: TLBundleParameters) extends LazyModuleImp(outer) {
+class AMUImp(outer: AMU) extends LazyModuleImp(outer) {
   val io = IO(new AMUIO)
+
+  val params = outer.matrix_nodes.head.out.head._2.bundle
+
   val amucore = Module(new AMUCore()(p, params))
 
   // connect AMUCore
