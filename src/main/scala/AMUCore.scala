@@ -3,7 +3,7 @@ package hbl2demo
 import chisel3._
 import chisel3.util._
 import freechips.rocketchip.tilelink._
-import coupledL2.{EnableCHI, L2ParamKey,MatrixDataBundle,MatrixKey}
+import coupledL2.{EnableCHI, L2ParamKey, MatrixDataBundle, MatrixKey}
 
 import coupledL2.tl2tl.TL2TLCoupledL2
 import coupledL2.tl2chi.{CHIIssue, PortIO, TL2CHICoupledL2}
@@ -18,28 +18,27 @@ import hbl2demo.HBL2_TL
 import hbl2demo.RegInfo
 import utility.TLLogger.a
 
-
-class AMUCore_IO (implicit p: Parameters, params: TLBundleParameters) extends AMUBundle {
+class AMUCore_IO(implicit p: Parameters, params: TLBundleParameters) extends AMUBundle {
   val init_fire = Input(Bool())
-  val ld_fire   = Input(Bool())
-  val st_fire   = Input(Bool())
+  val ld_fire = Input(Bool())
+  val st_fire = Input(Bool())
 
   val init_done = Output(Bool())
-  val ld_done   = Output(Bool())
-  val st_done   = Output(Bool())
-  
-  val tl        = new HBL2_TL
-  val reg_out   = Output(new RegInfo)
-  val reg_in    = Input(new RegInfo)
+  val ld_done = Output(Bool())
+  val st_done = Output(Bool())
+
+  val tl = new HBL2_TL
+  val reg_out = Output(new RegInfo)
+  val reg_in = Input(new RegInfo)
 }
 
-class AMUCore (implicit p: Parameters, params: TLBundleParameters) extends Module with AMUParameter {
+class AMUCore(implicit p: Parameters, params: TLBundleParameters) extends Module with AMUParameter {
   val io = IO(new AMUCore_IO)
 
   // initialize IO
   io.init_done := false.B
-  io.ld_done   := false.B
-  io.st_done   := false.B
+  io.ld_done := false.B
+  io.st_done := false.B
   for (i <- 0 until 8) {
     io.tl.hbl2_tl(i).a.valid := false.B
     io.tl.hbl2_tl(i).a.bits.opcode := 0.U
@@ -47,7 +46,7 @@ class AMUCore (implicit p: Parameters, params: TLBundleParameters) extends Modul
     io.tl.hbl2_tl(i).a.bits.size := 0.U
     io.tl.hbl2_tl(i).a.bits.source := 0.U
     io.tl.hbl2_tl(i).a.bits.address := 0.U
-    // io.tl.hbl2_tl(i).a.bits.user(MatrixKey) := 0.U
+    io.tl.hbl2_tl(i).a.bits.user(MatrixKey) := 0.U
     io.tl.hbl2_tl(i).a.bits.mask := 0.U
     io.tl.hbl2_tl(i).a.bits.data := 0.U
     io.tl.hbl2_tl(i).a.bits.corrupt := 0.U
@@ -67,23 +66,22 @@ class AMUCore (implicit p: Parameters, params: TLBundleParameters) extends Modul
 
   /////////////////////////////////////////////////////////////////////////////////////////
   // state machine
-  val states   = Enum(10)
+  val states = Enum(10)
 
-  val idle     = states(0)
-  val initReg  = states(1)
+  val idle = states(0)
+  val initReg = states(1)
   val initDone = states(2)
 
-  val ldAReq   = states(3)
-  val ldMData  = states(4)
-  val ldDone   = states(5)
+  val ldAReq = states(3)
+  val ldMData = states(4)
+  val ldDone = states(5)
 
-  val stAReq   = states(6)
-  val stDAck   = states(7)
-  val stDone   = states(8)
+  val stAReq = states(6)
+  val stDAck = states(7)
+  val stDone = states(8)
 
-  val state_r  = RegInit(idle)
+  val state_r = RegInit(idle)
 
-  
 /////////////////////////////////////////////////////////////////////////////////////////
   switch(state_r) {
     is(idle) {
@@ -112,16 +110,16 @@ class AMUCore (implicit p: Parameters, params: TLBundleParameters) extends Modul
     is(ldAReq) {
       for (i <- 0 until 8) {
         // channel A
-        io.tl.hbl2_tl(i).a.valid                  := true.B
-        io.tl.hbl2_tl(i).a.bits.opcode            := TLMessages.Get
-        io.tl.hbl2_tl(i).a.bits.param             := 0.U
-        io.tl.hbl2_tl(i).a.bits.size              := cachelineBytesLog2.U
-        io.tl.hbl2_tl(i).a.bits.source            := i.U
-        io.tl.hbl2_tl(i).a.bits.address           := i.U * 64.U // TODO: reverse the address in ld after st
-        // io.tl.hbl2_tl(i).a.bits.user(MatrixKey)   := 1.U
-        io.tl.hbl2_tl(i).a.bits.mask              := 0.U
-        io.tl.hbl2_tl(i).a.bits.data              := 0.U
-        io.tl.hbl2_tl(i).a.bits.corrupt           := 0.U
+        io.tl.hbl2_tl(i).a.valid := true.B
+        io.tl.hbl2_tl(i).a.bits.opcode := TLMessages.Get
+        io.tl.hbl2_tl(i).a.bits.param := 0.U
+        io.tl.hbl2_tl(i).a.bits.size := cachelineBytesLog2.U
+        io.tl.hbl2_tl(i).a.bits.source := i.U
+        io.tl.hbl2_tl(i).a.bits.address := i.U * 64.U // TODO: reverse the address in ld after st
+        io.tl.hbl2_tl(i).a.bits.user(MatrixKey) := 1.U
+        io.tl.hbl2_tl(i).a.bits.mask := 0.U
+        io.tl.hbl2_tl(i).a.bits.data := 0.U
+        io.tl.hbl2_tl(i).a.bits.corrupt := 0.U
       }
 
       // TODO: when all channel A are ready, go to next state
@@ -147,16 +145,16 @@ class AMUCore (implicit p: Parameters, params: TLBundleParameters) extends Modul
     is(stAReq) {
       for (i <- 0 until 8) {
         // channel A
-        io.tl.hbl2_tl(i).a.valid                  := true.B
-        io.tl.hbl2_tl(i).a.bits.opcode            := TLMessages.PutFullData
-        io.tl.hbl2_tl(i).a.bits.param             := 0.U
-        io.tl.hbl2_tl(i).a.bits.size              := cachelineBytesLog2.U
-        io.tl.hbl2_tl(i).a.bits.source            := i.U
-        io.tl.hbl2_tl(i).a.bits.address           := i.U * 64.U 
-        // io.tl.hbl2_tl(i).a.bits.user(MatrixKey)   := 1.U
-        io.tl.hbl2_tl(i).a.bits.mask              := 0.U
-        io.tl.hbl2_tl(i).a.bits.data              := reg(i).data(aPutBits-1, 0)
-        io.tl.hbl2_tl(i).a.bits.corrupt           := 0.U
+        io.tl.hbl2_tl(i).a.valid := true.B
+        io.tl.hbl2_tl(i).a.bits.opcode := TLMessages.PutFullData
+        io.tl.hbl2_tl(i).a.bits.param := 0.U
+        io.tl.hbl2_tl(i).a.bits.size := cachelineBytesLog2.U
+        io.tl.hbl2_tl(i).a.bits.source := i.U
+        io.tl.hbl2_tl(i).a.bits.address := i.U * 64.U
+        io.tl.hbl2_tl(i).a.bits.user(MatrixKey) := 1.U
+        io.tl.hbl2_tl(i).a.bits.mask := 0.U
+        io.tl.hbl2_tl(i).a.bits.data := reg(i).data(aPutBits - 1, 0)
+        io.tl.hbl2_tl(i).a.bits.corrupt := 0.U
       }
       state_r := stDAck
     }
@@ -182,16 +180,4 @@ class AMUCore (implicit p: Parameters, params: TLBundleParameters) extends Modul
     }
   }
 
-
-
-
-
-
-
-
-
-
-
 }
-
-
